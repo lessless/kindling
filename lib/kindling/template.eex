@@ -1,5 +1,13 @@
 defmodule <%= @namespace %>.<%= @version %>.<%= @resource_name %> do
   use Ecto.Schema
+  import Ecto.Changeset
+
+  @fields [
+    <%= @all_fields |> Enum.map(fn name -> ~s("#{Recase.to_snake(name)}") end) |> Enum.join(",\n") %>
+  ]
+  @required_fields [
+    <%= @required_fields |> Enum.map(fn name -> ~s("#{Recase.to_snake(name)}") end) |> Enum.join(",\n") %>
+  ]
 
   schema "<%= Recase.to_snake(@resource_name) %>" do
     <%= if @properties.const != [] do %># Constants<% end %>
@@ -7,6 +15,8 @@ defmodule <%= @namespace %>.<%= @version %>.<%= @resource_name %> do
     <% end %>
     <%= if @properties.value != [] do %># Fields<% end %>
     <%= for {name, df, _} <- @properties.value do %>field :<%= Recase.to_snake(name) %>, :<%= fhir_type_to_ecto(df) %>
+    <% end %>
+    <%= for {name, df, _} <- @properties.array do %>field :<%= Recase.to_snake(name) %>, <%= inspect(fhir_type_to_ecto(df)) %>
     <% end %>
     <%= if @properties.enum != [] do %># Enum<% end %>
     <%= for {name, df, _} <- @properties.enum do %>field :<%= Recase.to_snake(name) %>, Ecto.Enum, values: <%= inspect(df["enum"] |> Enum.map(&Recase.to_snake(&1)) |> Enum.map(&String.to_atom/1)) %>
@@ -17,5 +27,15 @@ defmodule <%= @namespace %>.<%= @version %>.<%= @resource_name %> do
     <%= if @properties.has_many != [] do %># Has Many<% end %>
     <%= for {name, df, _} <- @properties.has_many do %>has_many :<%= Recase.to_snake(name) %>, <%= @namespace %>.<%= @version %>.<%= ref_to_class_name(df["items"]["$ref"]) %>
     <% end %>
+  end
+
+  def base_changeset(data \\ %__MODULE__{}, attrs) do
+    data
+    |> cast(attrs, @fields)
+    <%= for {name, df, _} <- @properties.has_one do %>|> cast_assoc(:<%= Recase.to_snake(name) %>, with: &<%= @namespace %>.<%= @version %>.<%= ref_to_class_name(df["$ref"]) %>.base_changeset/1)
+    <% end %>
+    <%= for {name, df, _} <- @properties.has_many do %>|> cast_assoc(:<%= Recase.to_snake(name) %>, with: &<%= @namespace %>.<%= @version %>.<%= ref_to_class_name(df["items"]["$ref"]) %>.base_changeset/1)
+    <% end %>
+    |> validate_required(@required_fields)
   end
 end

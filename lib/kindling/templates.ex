@@ -12,17 +12,28 @@ defmodule Kindling.Templates do
       namespace: namespace,
       version: version,
       resource_name: resource_name,
-      properties: Resource.grouped_properties(resource)
+      properties: Resource.grouped_properties(resource),
+      all_fields: Resource.all_fields(resource),
+      required_fields: Resource.required_fields(resource)
     }
 
     assigns |> render() |> Code.format_string!(file: "#{resource_name}.ex")
   end
 
   def write_code(namespace, version, resource_name, resource) do
-    dir = Path.join(String.downcase(namespace), String.downcase(version))
-    file = Path.join(dir, "#{Recase.to_snake(resource_name)}.ex")
+    dir = Path.join(["lib", String.downcase(namespace), String.downcase(version)])
+    file = Path.join([dir | to_source_file_name(resource_name)])
 
-    File.mkdir_p!(dir)
+    File.mkdir_p!(Path.dirname(file))
     File.write!(file, resource_code(namespace, version, resource_name, resource))
+  end
+
+  def to_source_file_name(resource_name) do
+    resource_name
+    |> String.split("_")
+    |> Enum.reverse()
+    |> Enum.map(&Recase.to_snake/1)
+    |> then(fn [hd | tail] -> ["#{hd}.ex" | tail] end)
+    |> Enum.reverse()
   end
 end
