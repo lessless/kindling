@@ -1,0 +1,21 @@
+defmodule <%= @namespace %>.<%= @version %>.<%= @resource_name %> do
+  use Ecto.Schema
+
+  schema "<%= Recase.to_snake(@resource_name) %>" do
+    <%= if @properties.const != [] do %># Constants<% end %>
+    <%= for {name, df, _} <- @properties.const do %>field :<%= Recase.to_snake(name) %>, :string, virtual: true, default: "<%= df["const"] %>"
+    <% end %>
+    <%= if @properties.value != [] do %># Fields<% end %>
+    <%= for {name, df, _} <- @properties.value do %>field :<%= Recase.to_snake(name) %>, :<%= fhir_type_to_ecto(df) %>
+    <% end %>
+    <%= if @properties.enum != [] do %># Enum<% end %>
+    <%= for {name, df, _} <- @properties.enum do %>field :<%= Recase.to_snake(name) %>, Ecto.Enum, values: <%= inspect(df["enum"] |> Enum.map(&Recase.to_snake(&1)) |> Enum.map(&String.to_atom/1)) %>
+    <% end %>
+    <%= if @properties.has_one != [] do %># Has One<% end %>
+    <%= for {name, df, _} <- @properties.has_one do %>has_one :<%= Recase.to_snake(name) %>, <%= @namespace %>.<%= @version %>.<%= ref_to_class_name(df["$ref"]) %>
+    <% end %>
+    <%= if @properties.has_many != [] do %># Has Many<% end %>
+    <%= for {name, df, _} <- @properties.has_many do %>has_many :<%= Recase.to_snake(name) %>, <%= @namespace %>.<%= @version %>.<%= ref_to_class_name(df["items"]["$ref"]) %>
+    <% end %>
+  end
+end
