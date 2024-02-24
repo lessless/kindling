@@ -47,19 +47,21 @@ defmodule Kindling.Schema.Resource do
 
   def property_type(%{"const" => _}), do: :const
 
+  for embed <- Config.embedded_resources() do
+    dbg(embed)
+
+    def property_type(%{"$ref" => "#/definitions/" <> unquote(embed)}), do: :embed_one
+
+    def property_type(%{"items" => %{"$ref" => "#/definitions/" <> unquote(embed)}}) do
+      :embed_many
+    end
+  end
+
   def property_type(%{"$ref" => "#/definitions/" <> name}) do
     if is_class_name(name) do
       :has_one
     else
       :value
-    end
-  end
-
-  for embed <- Config.embedded_resources() do
-    def property_type(%{"$ref" => "#/definitions/" <> unquote(embed)}), do: :embed_one
-
-    def property_type(%{"items" => %{"$ref" => "#/definitions/" <> unquote(embed)}}) do
-      :embed_many
     end
   end
 
