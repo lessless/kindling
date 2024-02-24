@@ -24,3 +24,5 @@ kindling-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+/lib/fhir/

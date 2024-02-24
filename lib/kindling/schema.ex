@@ -1,4 +1,5 @@
 defmodule Kindling.Schema do
+  alias Kindling.Config
   alias Kindling.Version
   alias Kindling.Schema.Resource
 
@@ -8,6 +9,33 @@ defmodule Kindling.Schema do
     filename
     |> File.read!()
     |> Jason.decode!()
+    |> build_backlinks()
+  end
+
+  def build_backlinks(schema) do
+    new_defs =
+      schema["definitions"]
+      |> Enum.map(fn {name, def} -> {name, Map.put(def, "__backlinks", [])} end)
+      |> Map.new()
+
+    schema =
+      Map.put(schema, "definitions", new_defs)
+
+    defs =
+      schema["definitions"]
+      |> Map.drop(Config.embedded_resources())
+      |> Enum.reduce(schema["definitions"], fn {name, df}, definitions ->
+        refs = Resource.refs(df)
+
+        Enum.reduce(refs, definitions, fn ref, definitions ->
+          prior_backlinks = definitions[ref]["__backlinks"]
+          new_backlinks = [name | prior_backlinks]
+          new_def = Map.put(Map.get(definitions, ref), "__backlinks", new_backlinks)
+          Map.put(definitions, ref, new_def)
+        end)
+      end)
+
+    Map.put(schema, "definitions", defs)
   end
 
   def refs_recursive(schema, root_name) do

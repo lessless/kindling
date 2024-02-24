@@ -1,0 +1,50 @@
+defmodule <%= @namespace %>.<%= @version %>.<%= class_name(@resource_name) %> do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @fields [
+    <%= @all_fields |> Enum.map(fn name -> ~s("#{Recase.to_snake(name)}") end) |> Enum.join(",\n") %>
+  ]
+  @required_fields [
+    <%= @required_fields |> Enum.map(fn name -> ~s("#{Recase.to_snake(name)}") end) |> Enum.join(",\n") %>
+  ]
+
+  embedded_schema do
+    <%= if @properties.const != [] do %># Constants<% end %>
+    <%= for {name, df, _} <- @properties.const do %>field :<%= Recase.to_snake(name) %>, :string, virtual: true, default: "<%= df["const"] %>"
+    <% end %>
+    <%= if @properties.value != [] do %># Fields<% end %>
+    <%= for {name, df, _} <- @properties.value do %>field :<%= Recase.to_snake(name) %>, :<%= fhir_type_to_ecto(df) %>
+    <% end %>
+    <%= for {name, df, _} <- @properties.array do %>field :<%= Recase.to_snake(name) %>, <%= inspect(fhir_type_to_ecto(df)) %>
+    <% end %>
+    <%= if @properties.enum != [] do %># Enum<% end %>
+    <%= for {name, df, _} <- @properties.enum do %>field :<%= Recase.to_snake(name) %>, Ecto.Enum, values: <%= inspect(df["enum"] |> Enum.map(&Recase.to_snake(&1)) |> Enum.map(&String.to_atom/1)) %>
+    <% end %>
+    <%= if @properties.embed_one != [] do %># Embed One<% end %>
+    <%= for {name, df, _} <- @properties.embed_one do %>embed_one :<%= Recase.to_snake(name) %>, <%= @namespace %>.<%= @version %>.<%= ref_to_class_name(df["$ref"]) %>
+    <% end %>
+    <%= if @properties.embed_many != [] do %># Embed Many<% end %>
+    <%= for {name, df, _} <- @properties.embed_many do %>embed_many :<%= Recase.to_snake(name) %>, <%= @namespace %>.<%= @version %>.<%= ref_to_class_name(df["$ref"]) %>
+    <% end %>
+    <%= if @properties.has_one != [] do %># Has One<% end %>
+    <%= for {name, df, _} <- @properties.has_one do %>has_one :<%= Recase.to_snake(name) %>, <%= @namespace %>.<%= @version %>.<%= ref_to_class_name(df["$ref"]) %>
+    <% end %>
+    <%= if @properties.has_many != [] do %># Has Many<% end %>
+    <%= for {name, df, _} <- @properties.has_many do %>has_many :<%= Recase.to_snake(name) %>, <%= @namespace %>.<%= @version %>.<%= ref_to_class_name(df["items"]["$ref"]) %>
+    <% end %>
+    <%= if @backlinks != [] do %># belongs_to<% end %>
+    <%= for name <- @backlinks do %>belongs_to :<%= Recase.to_snake(name) %>, <%= @namespace %>.<%= @version %>.<%= class_name(name) %>
+    <% end %>
+  end
+
+  def base_changeset(data \\ %__MODULE__{}, attrs) do
+    data
+    |> cast(attrs, @fields)
+    <%= for {name, df, _} <- @properties.has_one do %>|> cast_assoc(:<%= Recase.to_snake(name) %>, with: &<%= @namespace %>.<%= @version %>.<%= ref_to_class_name(df["$ref"]) %>.base_changeset/1)
+    <% end %>
+    <%= for {name, df, _} <- @properties.has_many do %>|> cast_assoc(:<%= Recase.to_snake(name) %>, with: &<%= @namespace %>.<%= @version %>.<%= ref_to_class_name(df["items"]["$ref"]) %>.base_changeset/1)
+    <% end %>
+    |> validate_required(@required_fields)
+  end
+end

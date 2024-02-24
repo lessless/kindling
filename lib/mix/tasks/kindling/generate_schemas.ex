@@ -15,7 +15,9 @@ defmodule Mix.Tasks.Kindling.GenerateSchemas do
     [namespace, version, root] = args
 
     schema = Kindling.Schema.schema_object(version)
-    to_generate = Kindling.Schema.refs_recursive(schema, root)
+
+    to_generate =
+      Kindling.Schema.refs_recursive(schema, root)
 
     Enum.each(
       to_generate,

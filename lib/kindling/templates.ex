@@ -3,9 +3,11 @@ defmodule Kindling.Templates do
 
   import Kindling.Templates.Functions
 
+  alias Kindling.Config
   alias Kindling.Schema.Resource
 
   EEx.function_from_file(:def, :render, "lib/kindling/template.eex", [:assigns])
+  EEx.function_from_file(:def, :render_embedded, "lib/kindling/embed_template.eex", [:assigns])
 
   def resource_code(namespace, version, resource_name, resource) do
     assigns = %{
@@ -14,10 +16,19 @@ defmodule Kindling.Templates do
       resource_name: resource_name,
       properties: Resource.grouped_properties(resource),
       all_fields: Resource.all_fields(resource),
-      required_fields: Resource.required_fields(resource)
+      required_fields: Resource.required_fields(resource),
+      backlinks: resource["__backlinks"]
     }
 
-    assigns |> render() |> Code.format_string!(file: "#{resource_name}.ex")
+    if resource_name in Config.embedded_resources() do
+      assigns
+      |> render_embedded()
+      |> Code.format_string!(file: "#{resource_name}.ex")
+    else
+      assigns
+      |> render()
+      |> Code.format_string!(file: "#{resource_name}.ex")
+    end
   end
 
   def write_code(namespace, version, resource_name, resource) do

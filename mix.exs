@@ -21,6 +21,7 @@ defmodule Kindling.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:ecto, "~> 3.11", only: [:dev, :test]},
       {:jason, "~> 1.4"},
       {:recase, "~> 0.7.0"},
       {:req, "~> 0.4.11"}
