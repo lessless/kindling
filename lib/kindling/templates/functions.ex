@@ -30,6 +30,7 @@ defmodule Kindling.Templates.Functions do
   def fhir_type_to_ecto(%{"$ref" => "#/definitions/xhtml"}), do: :string
   def fhir_type_to_ecto(%{"$ref" => "#/definitions/markdown"}), do: :string
   def fhir_type_to_ecto(%{"$ref" => "#/definitions/base64Binary"}), do: :string
+  def fhir_type_to_ecto(%{"$ref" => "#/definitions/date"}), do: :date
   def fhir_type_to_ecto(%{"$ref" => "#/definitions/dateTime"}), do: :utc_datetime_usec
   def fhir_type_to_ecto(%{"$ref" => "#/definitions/instant"}), do: :utc_datetime_usec
   def fhir_type_to_ecto(%{"$ref" => "#/definitions/time"}), do: :time_usec

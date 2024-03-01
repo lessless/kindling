@@ -21,6 +21,25 @@ defmodule Kindling.Client do
     end
   end
 
+  def search(client, resource_module, params \\ [], opts \\ []) do
+    base_uri = URI.parse(client.base_url)
+    query = URI.encode_query(params)
+    uri = base_uri |> URI.append_path(resource_module.path()) |> URI.append_query(query)
+    more_headers = Keyword.get(opts, :headers, [])
+
+    headers = headers(client, more_headers)
+
+    uri
+    |> Req.get(headers: headers)
+    |> case do
+      {:ok, %{status: status} = response} when status >= 200 and status < 300 ->
+        Converter.convert(resource_module.version(), response.body)
+
+      other ->
+        other
+    end
+  end
+
   def headers(client, more_headers) do
     case client.auth_mode do
       :open ->
