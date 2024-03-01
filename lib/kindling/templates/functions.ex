@@ -40,10 +40,4 @@ defmodule Kindling.Templates.Functions do
 
   def fhir_type_to_ecto(%{"type" => "array", "items" => items}),
     do: {:array, fhir_type_to_ecto(items)}
-
-  def ref_to_class_name("#/definitions/" <> name),
-    do: class_name(name)
-
-  def class_name(name),
-    do: name |> String.split("_") |> Enum.map(&Recase.to_pascal/1) |> Enum.join(".")
 end

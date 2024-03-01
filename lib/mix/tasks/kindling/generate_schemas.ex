@@ -6,22 +6,23 @@ defmodule Mix.Tasks.Kindling.GenerateSchemas do
 
   @impl Mix.Task
   def run(args) do
-    if Enum.count(args) != 3 do
-      Mix.shell().error(
-        "usage: mix mix kindling.generate_schemas <namespace> <R5|R4|R3> <root resource name>"
-      )
+    if Enum.count(args) != 2 do
+      Mix.shell().error("usage: mix mix kindling.generate_schemas <namespace> <R5|R4|R3>")
+
+      raise "Argument error."
     end
 
-    [namespace, version, root] = args
+    [namespace, version] = args
 
     schema = Kindling.Schema.schema_object(version)
+    roots = Kindling.Config.root_resources()
 
     to_generate =
-      Kindling.Schema.refs_recursive(schema, root)
+      Kindling.Schema.refs_recursive(schema, roots)
 
     Enum.each(
       to_generate,
-      &Kindling.Templates.write_code(namespace, version, &1, schema["definitions"][&1])
+      &Kindling.Templates.write_code(namespace, version, roots, &1, schema["definitions"][&1])
     )
   end
 end

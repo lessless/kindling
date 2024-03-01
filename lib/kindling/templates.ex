@@ -2,41 +2,41 @@ defmodule Kindling.Templates do
   require EEx
 
   import Kindling.Templates.Functions
+  import Kindling.Schema.Resource
 
-  alias Kindling.Config
   alias Kindling.Schema.Resource
 
   EEx.function_from_file(:def, :render, "lib/kindling/template.eex", [:assigns])
   EEx.function_from_file(:def, :render_embedded, "lib/kindling/embed_template.eex", [:assigns])
 
-  def resource_code(namespace, version, resource_name, resource) do
+  def resource_code(namespace, version, roots, resource_name, resource) do
     assigns = %{
       namespace: namespace,
       version: version,
       resource_name: resource_name,
-      properties: Resource.grouped_properties(resource),
+      properties: Resource.grouped_properties(resource, roots),
       all_fields: Resource.all_fields(resource),
       required_fields: Resource.required_fields(resource),
-      backlinks: resource["__backlinks"]
+      backlinks: Enum.filter(resource["__backlinks"], &(&1 in roots))
     }
 
-    if resource_name in Config.embedded_resources() do
+    if resource_name in roots do
       assigns
-      |> render_embedded()
+      |> render()
       |> Code.format_string!(file: "#{resource_name}.ex")
     else
       assigns
-      |> render()
+      |> render_embedded()
       |> Code.format_string!(file: "#{resource_name}.ex")
     end
   end
 
-  def write_code(namespace, version, resource_name, resource) do
+  def write_code(namespace, version, roots, resource_name, resource) do
     dir = Path.join(["lib", String.downcase(namespace), String.downcase(version)])
     file = Path.join([dir | to_source_file_name(resource_name)])
 
     File.mkdir_p!(Path.dirname(file))
-    File.write!(file, resource_code(namespace, version, resource_name, resource))
+    File.write!(file, resource_code(namespace, version, roots, resource_name, resource))
   end
 
   def to_source_file_name(resource_name) do

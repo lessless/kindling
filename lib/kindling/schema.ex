@@ -1,5 +1,4 @@
 defmodule Kindling.Schema do
-  alias Kindling.Config
   alias Kindling.Version
   alias Kindling.Schema.Resource
 
@@ -23,7 +22,6 @@ defmodule Kindling.Schema do
 
     defs =
       schema["definitions"]
-      |> Map.drop(Config.embedded_resources())
       |> Enum.reduce(schema["definitions"], fn {name, df}, definitions ->
         refs = Resource.refs(df)
 
@@ -38,8 +36,12 @@ defmodule Kindling.Schema do
     Map.put(schema, "definitions", defs)
   end
 
-  def refs_recursive(schema, root_name) do
+  def refs_recursive(schema, root_name) when is_binary(root_name) do
     do_recurse(schema, MapSet.new([root_name]), [root_name])
+  end
+
+  def refs_recursive(schema, roots) when is_list(roots) do
+    do_recurse(schema, MapSet.new(roots), roots)
   end
 
   defp do_recurse(_schema, visited, []), do: visited
