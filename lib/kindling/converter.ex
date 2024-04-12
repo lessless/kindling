@@ -1,6 +1,16 @@
 defmodule Kindling.Converter do
+  @moduledoc """
+  Convert between JSON-style maps and Elixir structs, using the generated resource Ecto schemas as
+  a guide.
+  """
   alias Kindling.Schema.Resource
 
+  @doc """
+  Convert a JSON-style map with string keys to a FHIR resource schema. `version_namespace` is
+  the module namespace where your resource schema module have been generated (e.g. `FHIR.R4`)
+  and `resource_json` is the map of data.
+  """
+  @spec convert(atom() | binary(), map()) :: Kindling.Schema.Resource.schema()
   def convert(version_namespace, %{"resourceType" => resource_type} = resource_json) do
     resource_module = Module.concat(version_namespace, Resource.class_name(resource_type))
     resource_list_module = Module.concat(version_namespace, "ResourceList")
@@ -8,6 +18,7 @@ defmodule Kindling.Converter do
     structify(resource_module, resource_list_module, resource_json)
   end
 
+  @doc false
   def structify(
         resource_module,
         resource_list_module,
@@ -40,6 +51,7 @@ defmodule Kindling.Converter do
     struct!(resource_module, atom_map)
   end
 
+  @doc false
   def convert_field(resource_module, resource_list_module, field, value) do
     cond do
       field in resource_module.__schema__(:associations) ->
@@ -56,6 +68,7 @@ defmodule Kindling.Converter do
     end
   end
 
+  @doc false
   def cast_field(resource_module, field, value) do
     type = resource_module.__schema__(:type, field)
 
@@ -82,6 +95,7 @@ defmodule Kindling.Converter do
     end
   end
 
+  @doc false
   def convert_association(resource_module, resource_list_module, field, value) do
     %{cardinality: cardinality, related: type} = resource_module.__schema__(:association, field)
 
@@ -94,6 +108,7 @@ defmodule Kindling.Converter do
     end
   end
 
+  @doc false
   def convert_embed(resource_module, resource_list_module, field, value) do
     %{cardinality: cardinality, related: type} = resource_module.__schema__(:embed, field)
 

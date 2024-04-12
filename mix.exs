@@ -4,11 +4,32 @@ defmodule Kindling.MixProject do
   def project do
     [
       app: :kindling,
-      version: "0.1.0",
+      version: version(),
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+
+      # Docs
+      source_url: "https://gitlab.com/mythic-insight/kindling",
+      docs: [
+        main: "Kindling"
+      ],
+
+      # Hex
+      licenses: ["MIT"],
+      links: %{
+        "source" => "https://gitlab.com/mythic-insight/kindling"
+      }
     ]
+  end
+
+  def version do
+    [_, version] =
+      "README.md"
+      |> File.read!()
+      |> then(&Regex.run(~r/{:kindling, "~> ([^"]+)"}/, &1))
+
+    version
   end
 
   # Run "mix help compile.app" to learn about applications.
@@ -21,7 +42,9 @@ defmodule Kindling.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:credo, "~> 1.7", only: [:dev]},
       {:ecto, "~> 3.11", only: [:dev, :test]},
+      {:ex_doc, "~> 0.31.2", only: [:dev]},
       {:jason, "~> 1.4"},
       {:recase, "~> 0.7.0"},
       {:req, "~> 0.4.11"}

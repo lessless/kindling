@@ -1,4 +1,8 @@
 defmodule Kindling.Templates do
+  @moduledoc """
+  Template functions for generating FHIR Resource modules.
+  """
+
   require EEx
 
   import Kindling.Templates.Functions

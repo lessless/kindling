@@ -14,7 +14,9 @@ defmodule Mix.Tasks.Kindling.GenerateSchemas do
 
     [namespace, version] = args
 
-    schema = Kindling.Schema.schema_object(version)
+    Kindling.SchemaDownloader.ensure_version!(version)
+
+    schema = Kindling.Schema.schema_map(version)
     roots = Kindling.Config.root_resources()
 
     to_generate =

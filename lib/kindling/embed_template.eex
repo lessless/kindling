@@ -19,7 +19,7 @@ defmodule <%= @namespace %>.<%= @version %>.<%= class_name(@resource_name) %> do
     <%= for {name, df, _} <- @properties.array do %>field :<%= Recase.to_snake(name) %>, <%= inspect(fhir_type_to_ecto(df)) %>
     <% end %>
     <%= if @properties.enum != [] do %># Enum<% end %>
-    <%= for {name, df, _} <- @properties.enum do %>field :<%= Recase.to_snake(name) %>, Ecto.Enum, values: <%= inspect(df["enum"] |> Enum.map(&Recase.to_snake(&1)) |> Enum.map(&String.to_atom/1)) %>
+    <%= for {name, df, _} <- @properties.enum do %>field :<%= Recase.to_snake(name) %>, Ecto.Enum, values: <%= enum_value_string(df) %>
     <% end %>
     <%= if @properties.embeds_one != [] do %># Embed One<% end %>
     <%= for {name, df, _} <- @properties.embeds_one do %>embeds_one :<%= Recase.to_snake(name) %>, <%= @namespace %>.<%= @version %>.<%= ref_to_class_name(df["$ref"]) %>
@@ -34,6 +34,9 @@ defmodule <%= @namespace %>.<%= @version %>.<%= class_name(@resource_name) %> do
     <%= for {name, df, _} <- @properties.has_many do %>has_many :<%= Recase.to_snake(name) %>, <%= @namespace %>.<%= @version %>.<%= ref_to_class_name(df["items"]["$ref"]) %>
     <% end %>
   end
+
+  def version_namespace, do: <%= @namespace %>.<%= @version %>
+  def version, do: "<%= @version %>"
 
   def base_changeset(data \\ %__MODULE__{}, attrs) do
     data
