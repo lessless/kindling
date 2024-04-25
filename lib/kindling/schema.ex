@@ -18,11 +18,21 @@ defmodule Kindling.Schema do
   @spec schema_map(version_string()) :: map()
   def schema_map(version) do
     filename = Path.join(Version.version_dir(version), "fhir.schema.json")
+    choices = get_choice_data(version)
 
     filename
     |> File.read!()
     |> Jason.decode!()
     |> build_backlinks()
+    |> add_choice_data(choices)
+  end
+
+  def get_choice_data(version) do
+    filename = Path.join(Version.version_dir(version), "choice-elements.json")
+
+    filename
+    |> File.read!()
+    |> Jason.decode!()
   end
 
   def all_resources(schema) do
@@ -55,6 +65,57 @@ defmodule Kindling.Schema do
       end)
 
     Map.put(schema, "definitions", defs)
+  end
+
+  def add_choice_data(schema, %{"elements" => choices}) do
+    Enum.reduce(choices, schema, &apply_choice/2)
+  end
+
+  defp apply_choice({path, types_list}, schema) do
+    [type_name | rest] = String.split(path, ".")
+
+    {type_name, field_name} = follow_refs(schema, type_name, rest)
+    field_name = String.replace(field_name, "[x]", "")
+    type = schema["definitions"][type_name]
+
+    types_list =
+      case types_list do
+        ["*"] ->
+          type["properties"]
+          |> Map.keys()
+          |> Enum.filter(&String.starts_with?(&1, field_name))
+          |> Enum.map(&String.replace(&1, field_name, ""))
+
+        other ->
+          other
+      end
+
+    field_names =
+      Enum.map(types_list, fn type ->
+        "#{field_name}_#{Recase.to_snake(type)}"
+      end)
+
+    existing_choices = Map.get(type, "__choices", %{})
+    new_choices = Map.put(existing_choices, field_name, field_names)
+
+    put_in(schema, ["definitions", type_name, "__choices"], new_choices)
+  end
+
+  defp follow_refs(_schema, type_name, [field_name]), do: {type_name, field_name}
+
+  defp follow_refs(schema, type_name, [hd | rest]) do
+    ref =
+      case schema["definitions"][type_name]["properties"][hd] do
+        %{"items" => %{"$ref" => ref}} ->
+          ref
+
+        %{"$ref" => ref} ->
+          ref
+      end
+
+    "#/definitions/" <> next_type = ref
+
+    follow_refs(schema, next_type, rest)
   end
 
   @doc """

@@ -39,6 +39,14 @@ defmodule <%= @namespace %>.<%= @version %>.<%= class_name(@resource_name) %> do
     <% end %>
   end
 
+  <%= for {name, choices} <- @choices do %>
+    def choices(<%= inspect(name) %>) do
+      [<%= Enum.map_join(choices, ", ", &":#{&1}") %>]
+    end
+  <% end %>
+
+  def choices(_), do: nil
+
   def version_namespace, do: <%= @namespace %>.<%= @version %>
   def version, do: "<%= @version %>"
   def path, do: "/<%= @resource_name %>"

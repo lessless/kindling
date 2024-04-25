@@ -29,7 +29,6 @@ defmodule Kindling.SchemaDownloader do
         :ok
 
       other ->
-        dbg(other)
         other
     end
   end
@@ -51,6 +50,44 @@ defmodule Kindling.SchemaDownloader do
 
       true ->
         raise "Could not download and unzip the FHIR schema for version #{version}."
+    end
+  end
+
+  def download_choices(version) do
+    {:ok, _} = Application.ensure_all_started(:req)
+    version_alias = Map.get(@version_aliases, version, version)
+
+    version_dir = "#{Mix.Project.build_path(Mix.Project.config())}/fhir/#{version}"
+    filename = "#{version_dir}/choice-elements.json"
+    File.mkdir_p!(version_dir)
+
+    Req.Request.new(
+      method: :get,
+      url: "http://www.hl7.org/fhir/#{version_alias}/choice-elements.json"
+    )
+    |> Req.Request.prepend_response_steps(handle_utf16: &handle_utf16/1)
+    |> Req.Request.append_response_steps(decompress_body: &Req.Steps.decompress_body/1)
+    |> Req.get!()
+    |> then(&File.write!(filename, &1.body))
+  end
+
+  def handle_utf16({request, %{body: "\uFEFF" <> body} = response}) do
+    {request, %{response | body: body}}
+  end
+
+  def ensure_choices!(version) do
+    version_dir = "#{Mix.Project.build_path(Mix.Project.config())}/fhir/#{version}"
+    filename = "#{version_dir}/choice-elements.json"
+
+    cond do
+      File.exists?(filename) ->
+        :ok
+
+      download_choices(version) == :ok ->
+        :ok
+
+      true ->
+        raise "Could not download choice element data for version #{version}."
     end
   end
 end

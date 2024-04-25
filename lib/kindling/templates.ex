@@ -21,7 +21,8 @@ defmodule Kindling.Templates do
       properties: Resource.grouped_properties(resource, roots),
       all_fields: Resource.all_fields(resource),
       required_fields: Resource.required_fields(resource),
-      backlinks: Enum.filter(resource["__backlinks"], &(&1 in roots))
+      backlinks: Enum.filter(resource["__backlinks"], &(&1 in roots)),
+      choices: resource["__choices"] || %{}
     }
 
     if resource_name in roots do
