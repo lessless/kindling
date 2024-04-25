@@ -49,7 +49,10 @@ defmodule Kindling.Client do
     |> req_fn.(headers: headers)
     |> case do
       {:ok, %{status: status} = response} when status >= 200 and status < 300 ->
-        Converter.convert(resource_module.version_namespace(), response.body)
+        {:ok, Converter.convert(resource_module.version_namespace(), response.body)}
+
+      {:ok, %{body: %{"resourceType" => _}} = response} ->
+        {:error, Converter.convert(resource_module.version_namespace(), response.body)}
 
       other ->
         other
@@ -86,12 +89,85 @@ defmodule Kindling.Client do
     |> req_fn.(headers: headers)
     |> case do
       {:ok, %{status: status} = response} when status >= 200 and status < 300 ->
-        Converter.convert(resource_module.version_namespace(), response.body)
+        {:ok, Converter.convert(resource_module.version_namespace(), response.body)}
+
+      {:ok, %{body: %{"resourceType" => _}} = response} ->
+        {:error, Converter.convert(resource_module.version_namespace(), response.body)}
 
       other ->
         other
     end
   end
+
+  def create(client, resource_module, attrs, opts \\ [], req_fn \\ &Kindling.Client.Req.post/2) do
+    base_uri = URI.parse(client.base_url)
+    uri = base_uri |> URI.append_path(resource_module.path())
+    more_headers = Keyword.get(opts, :headers, [])
+
+    headers = headers(client, more_headers)
+
+    uri
+    |> req_fn.(headers: headers, json: attrs)
+    |> case do
+      {:ok, %{status: status} = response} when status >= 200 and status < 300 ->
+        {:ok, Converter.convert(resource_module.version_namespace(), response.body)}
+
+      {:ok, %{body: %{"resourceType" => _}} = response} ->
+        {:error, Converter.convert(resource_module.version_namespace(), response.body)}
+
+      other ->
+        other
+    end
+  end
+
+  def update(client, resource_module, id, attrs, opts \\ [], req_fn \\ &Kindling.Client.Req.put/2) do
+    base_uri = URI.parse(client.base_url)
+    uri = base_uri |> URI.append_path(resource_module.path()) |> URI.append_path("/#{id}")
+    more_headers = Keyword.get(opts, :headers, [])
+
+    headers = headers(client, more_headers)
+
+    uri
+    |> req_fn.(headers: headers, json: attrs)
+    |> case do
+      {:ok, %{status: status} = response} when status >= 200 and status < 300 ->
+        {:ok, Converter.convert(resource_module.version_namespace(), response.body)}
+
+      {:ok, %{body: %{"resourceType" => _}} = response} ->
+        {:error, Converter.convert(resource_module.version_namespace(), response.body)}
+
+      other ->
+        other
+    end
+  end
+
+  def delete(client, resource_module, id, opts \\ [], req_fn \\ &Kindling.Client.Req.delete/2) do
+    base_uri = URI.parse(client.base_url)
+    uri = base_uri |> URI.append_path(resource_module.path()) |> URI.append_path("/#{id}")
+    more_headers = Keyword.get(opts, :headers, [])
+
+    headers = headers(client, more_headers)
+
+    uri
+    |> req_fn.(headers: headers)
+    |> convert_response(resource_module)
+  end
+
+  def convert_response({:ok, %{status: status}}, _resource_module)
+      when status == 204 do
+    :ok
+  end
+
+  def convert_response({:ok, %{status: status} = response}, resource_module)
+      when status >= 200 and status < 300 do
+    {:ok, Converter.convert(resource_module.version_namespace(), response.body)}
+  end
+
+  def convert_response({:ok, %{body: %{"resourceType" => _}} = response}, resource_module) do
+    {:error, Converter.convert(resource_module.version_namespace(), response.body)}
+  end
+
+  def convert_response(other, _), do: other
 
   @doc false
   def headers(client, more_headers) do

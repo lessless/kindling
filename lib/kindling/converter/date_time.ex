@@ -13,6 +13,12 @@ defmodule Kindling.Converter.DateTime do
             second: "",
             zone: ""
 
+  def parse!(value) do
+    {:ok, v, 0} = parse(value)
+
+    v
+  end
+
   @doc """
   Parse a string containing a FHIR-style datetime. Return `{:ok, DateTime.t(), integer()}` or a parse
   error.

@@ -43,12 +43,16 @@ defmodule <%= @namespace %>.<%= @version %>.<%= class_name(@resource_name) %> do
   def version, do: "<%= @version %>"
   def path, do: "/<%= @resource_name %>"
 
-  def base_changeset(data \\ %__MODULE__{}, attrs) do
+  def changeset(data \\ %__MODULE__{}, attrs) do
     data
     |> cast(attrs, @fields)
     <%= for {name, df, _} <- @properties.has_one do %>|> cast_assoc(:<%= Recase.to_snake(name) %>, with: &<%= @namespace %>.<%= @version %>.<%= ref_to_class_name(df["$ref"]) %>.base_changeset/1)
     <% end %>
     <%= for {name, df, _} <- @properties.has_many do %>|> cast_assoc(:<%= Recase.to_snake(name) %>, with: &<%= @namespace %>.<%= @version %>.<%= ref_to_class_name(df["items"]["$ref"]) %>.base_changeset/1)
+    <% end %>
+    <%= for {name, _df, _} <- @properties.embeds_one do %>|> cast_embed(:<%= Recase.to_snake(name) %>)
+    <% end %>
+    <%= for {name, _df, _} <- @properties.embeds_many do %>|> cast_embed(:<%= Recase.to_snake(name) %>)
     <% end %>
     |> validate_required(@required_fields)
   end

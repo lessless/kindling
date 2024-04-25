@@ -42,11 +42,24 @@ defmodule Kindling.Converter do
 
     atom_map =
       resource_json
-      |> Enum.map(fn {key_string, value} ->
+      |> map_or_nil(fn {key_string, value} ->
         key_atom = key_string |> Recase.to_snake() |> String.to_existing_atom()
-        {key_atom, convert_field(resource_module, resource_list_module, key_atom, value)}
+
+        case value do
+          nil ->
+            {key_atom, nil}
+
+          value ->
+            {key_atom, convert_field(resource_module, resource_list_module, key_atom, value)}
+        end
       end)
-      |> Map.new()
+      |> case do
+        nil ->
+          nil
+
+        enum ->
+          Map.new(enum)
+      end
 
     struct!(resource_module, atom_map)
   end
@@ -85,6 +98,16 @@ defmodule Kindling.Converter do
     end
   end
 
+  defp do_cast_field({:array, _} = type, value) do
+    case Ecto.Type.cast(type, wrap(value)) do
+      {:ok, v} ->
+        v
+
+      other ->
+        other
+    end
+  end
+
   defp do_cast_field(type, value) do
     case Ecto.Type.cast(type, value) do
       {:ok, v} ->
@@ -101,7 +124,7 @@ defmodule Kindling.Converter do
 
     case cardinality do
       :many ->
-        Enum.map(value, &structify(type, resource_list_module, &1))
+        map_or_nil(wrap(value), &structify(type, resource_list_module, &1))
 
       :one ->
         structify(type, resource_list_module, value)
@@ -114,10 +137,20 @@ defmodule Kindling.Converter do
 
     case cardinality do
       :many ->
-        Enum.map(value, &structify(type, resource_list_module, &1))
+        map_or_nil(wrap(value), &structify(type, resource_list_module, &1))
 
       :one ->
         structify(type, resource_list_module, value)
     end
   end
+
+  defp map_or_nil(nil, _), do: nil
+
+  defp map_or_nil(enum, mapper) do
+    Enum.map(enum, mapper)
+  end
+
+  defp wrap(binary) when is_binary(binary), do: [binary]
+  defp wrap(list) when is_list(list), do: list
+  defp wrap(other), do: [other]
 end
