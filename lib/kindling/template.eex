@@ -41,8 +41,11 @@ defmodule <%= @namespace %>.<%= @version %>.<%= class_name(@resource_name) %> do
 
   <%= for {name, choices} <- @choices do %>
     def choices(<%= inspect(name) %>) do
-      [<%= Enum.map_join(choices, ", ", &":#{&1}") %>]
+      [<%= Enum.map_join(choices, ", ", &":#{name}_#{Recase.to_snake(&1)}") %>]
     end
+    <%= for choice <- choices do %>
+      def choices(<%= inspect("#{name}#{choice}") %>), do: :error
+    <% end %>
   <% end %>
 
   def choices(_), do: nil

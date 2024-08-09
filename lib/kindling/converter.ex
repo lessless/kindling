@@ -10,12 +10,17 @@ defmodule Kindling.Converter do
   the module namespace where your resource schema module have been generated (e.g. `FHIR.R4`)
   and `resource_json` is the map of data.
   """
-  @spec convert(atom() | binary(), map()) :: Kindling.Schema.Resource.schema()
+  @spec convert(atom() | binary(), map() | binary()) ::
+          Kindling.Schema.Resource.schema() | binary()
   def convert(version_namespace, %{"resourceType" => resource_type} = resource_json) do
     resource_module = Module.concat(version_namespace, Resource.class_name(resource_type))
     resource_list_module = Module.concat(version_namespace, "ResourceList")
 
     structify(resource_module, resource_list_module, resource_json)
+  end
+
+  def convert(_version_namespace, string) when is_binary(string) do
+    string
   end
 
   @doc false
@@ -100,6 +105,18 @@ defmodule Kindling.Converter do
 
   defp do_cast_field({:array, _} = type, value) do
     case Ecto.Type.cast(type, wrap(value)) do
+      {:ok, v} ->
+        v
+
+      other ->
+        other
+    end
+  end
+
+  defp do_cast_field({:parameterized, Ecto.Enum, _} = type, value) do
+    value = Recase.to_snake(value)
+
+    case Ecto.Type.cast(type, value) do
       {:ok, v} ->
         v
 

@@ -9,7 +9,7 @@ Kindling can be installed by adding `kindling` to your list of dependencies in `
 ```elixir
 def deps do
   [
-    {:kindling, "~> 0.1.0"}
+    {:kindling, "~> 1.0.1"}
   ]
 end
 ```

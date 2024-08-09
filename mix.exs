@@ -8,6 +8,7 @@ defmodule Kindling.MixProject do
       elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      description: "Resource generators and API clients for HL7 FHIR.",
 
       # Docs
       source_url: "https://gitlab.com/mythic-insight/kindling",
@@ -16,9 +17,11 @@ defmodule Kindling.MixProject do
       ],
 
       # Hex
-      licenses: ["MIT"],
-      links: %{
-        "source" => "https://gitlab.com/mythic-insight/kindling"
+      package: %{
+        licenses: ["MIT"],
+        links: %{
+          "source" => "https://gitlab.com/mythic-insight/kindling"
+        }
       }
     ]
   end

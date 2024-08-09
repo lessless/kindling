@@ -90,13 +90,8 @@ defmodule Kindling.Schema do
           other
       end
 
-    field_names =
-      Enum.map(types_list, fn type ->
-        "#{field_name}_#{Recase.to_snake(type)}"
-      end)
-
     existing_choices = Map.get(type, "__choices", %{})
-    new_choices = Map.put(existing_choices, field_name, field_names)
+    new_choices = Map.put(existing_choices, field_name, types_list)
 
     put_in(schema, ["definitions", type_name, "__choices"], new_choices)
   end
