@@ -11,7 +11,7 @@ defmodule Kindling.MixProject do
       description: "Resource generators and API clients for HL7 FHIR.",
 
       # Docs
-      source_url: "https://gitlab.com/mythic-insight/kindling",
+      source_url: "https://code.mythicinsight.com/mythic-insight/kindling",
       docs: [
         main: "Kindling"
       ],
@@ -20,7 +20,7 @@ defmodule Kindling.MixProject do
       package: %{
         licenses: ["MIT"],
         links: %{
-          "source" => "https://gitlab.com/mythic-insight/kindling"
+          "source" => "https://code.mythicinsight.com/mythic-insight/kindling"
         }
       }
     ]
