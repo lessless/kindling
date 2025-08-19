@@ -21,8 +21,8 @@ defmodule Kindling.SchemaDownloader do
     File.mkdir_p!(version_dir)
 
     "http://hl7.org/fhir/#{version_alias}/fhir.schema.json.zip"
-    |> Req.get!()
-    |> then(&File.write!(filename, &1.body))
+    |> Req.get!( into: File.stream!(filename))
+
 
     case :zip.unzip(to_charlist(filename), cwd: to_charlist(version_dir)) do
       {:ok, _filelist} ->
