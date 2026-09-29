@@ -189,6 +189,6 @@ defmodule Kindling.Client do
 
   @doc false
   def format_header do
-    {"Accept", "application/json"}
+    {"Accept", "application/fhir+json"}
   end
 end
